@@ -1,131 +1,72 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
+import React, {useState} from 'react';
+import {Button, Image, ScrollView, StyleSheet, Text, View} from 'react-native';
+import {launchCamera} from 'react-native-image-picker';
+import axios from 'axios';
+import RNFS from 'react-native-fs';
 
-import React from 'react';
-import type {PropsWithChildren} from 'react';
-import {
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
-  View,
-} from 'react-native';
-
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
-
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
-
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-}
+const GOOGLE_API_KEY = 'GOOGLE_API_KEY'; // ⚠️ store securely later!
 
 function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+  const [ocrText, setOcrText] = useState('');
+  const [imageUri, setImageUri] = useState<string | null>(null);
 
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+  const onCapture = async () => {
+    const result = await launchCamera({mediaType: 'photo', quality: 1});
+    if (!result.assets || !result.assets[0].uri) return;
+
+    const uri = result.assets[0].uri;
+    setImageUri(uri);
+
+    try {
+      // Convert to base64
+      const base64Img = await RNFS.readFile(uri, 'base64');
+
+      const body = {
+        requests: [
+          {
+            image: {content: base64Img},
+            features: [{type: 'TEXT_DETECTION'}],
+          },
+        ],
+      };
+
+      console.log('Request body prepared:', body);
+
+      const response = await axios.post(
+        `https://vision.googleapis.com/v1/images:annotate?key=${GOOGLE_API_KEY}`,
+        body,
+        {headers: {'Content-Type': 'application/json'}},
+      );
+
+      const text =
+        response.data.responses[0]?.fullTextAnnotation?.text || 'No text found';
+      setOcrText(text);
+    } catch (error) {
+      console.log(JSON.stringify(error));
+      setOcrText('OCR failed.');
+    }
   };
 
-  /*
-   * To keep the template simple and small we're adding padding to prevent view
-   * from rendering under the System UI.
-   * For bigger apps the recommendation is to use `react-native-safe-area-context`:
-   * https://github.com/AppAndFlow/react-native-safe-area-context
-   *
-   * You can read more about it here:
-   * https://github.com/react-native-community/discussions-and-proposals/discussions/827
-   */
-  const safePadding = '5%';
-
   return (
-    <View style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        style={backgroundStyle}>
-        <View style={{paddingRight: safePadding}}>
-          <Header/>
-        </View>
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-            paddingHorizontal: safePadding,
-            paddingBottom: safePadding,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
-    </View>
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.title}>Google Vision OCR</Text>
+      <Button title="Capture Document" onPress={onCapture} />
+      {imageUri && <Image source={{uri: imageUri}} style={styles.image} />}
+      {ocrText ? <Text style={styles.ocrText}>{ocrText}</Text> : null}
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
+  container: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
   },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
-  },
+  title: {fontSize: 22, fontWeight: 'bold', marginBottom: 20},
+  image: {width: 300, height: 400, resizeMode: 'contain', marginVertical: 20},
+  ocrText: {fontSize: 16, textAlign: 'right', writingDirection: 'rtl'}, // ✅ Hebrew friendly
 });
 
 export default App;
