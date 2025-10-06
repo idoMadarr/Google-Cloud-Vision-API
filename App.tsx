@@ -17,10 +17,10 @@ const App: React.FC = () => {
     <ScrollView contentContainerStyle={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={'white'} />
       <Text style={{fontSize: 20}}>- Optical Character Recognition -</Text>
-      <TouchableOpacity style={styles.button}>
+      <TouchableOpacity onPress={googleOCR} style={styles.button}>
         <Text style={styles.buttonTitle}>Google Vision OCR</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.button}>
+      <TouchableOpacity onPress={nativeOCR} style={styles.button}>
         <Text style={styles.buttonTitle}>Native Vision OCR</Text>
       </TouchableOpacity>
       {imageSource && (
