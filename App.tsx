@@ -1,5 +1,12 @@
 import React from 'react';
-import {Button, Image, ScrollView, StyleSheet, Text} from 'react-native';
+import {
+  Image,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+} from 'react-native';
 import useOpticalCharRecognotion from './hooks/useOpticalCharRecognotion';
 
 const App: React.FC = () => {
@@ -8,9 +15,14 @@ const App: React.FC = () => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Button title={'Google Vision OCR'} onPress={googleOCR} />
-
-      <Button title={'Native Vision OCR'} onPress={nativeOCR} />
+      <StatusBar barStyle="dark-content" backgroundColor={'white'} />
+      <Text style={{fontSize: 20}}>- Optical Character Recognition -</Text>
+      <TouchableOpacity style={styles.button}>
+        <Text style={styles.buttonTitle}>Google Vision OCR</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.button}>
+        <Text style={styles.buttonTitle}>Native Vision OCR</Text>
+      </TouchableOpacity>
       {imageSource && (
         <Image source={{uri: imageSource}} style={styles.image} />
       )}
@@ -26,7 +38,20 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    backgroundColor: 'white',
+  },
+  button: {
+    height: 50,
+    borderRadius: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '85%',
+    margin: 10,
+    backgroundColor: 'blue',
+  },
+  buttonTitle: {
+    color: 'white',
+    fontSize: 16,
   },
   image: {
     width: 300,
